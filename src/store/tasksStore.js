@@ -5,7 +5,8 @@ export const useTasksStore = defineStore('tasks', {
   state: () => ({
     tasks: [],
     loading: false,
-    error: null
+    error: null,
+    loadingMove: false 
   }),
 
   getters: {
@@ -60,20 +61,17 @@ export const useTasksStore = defineStore('tasks', {
 
     async changeTaskStatus(id, newStatusId) {
       try {
-        console.log('changeTaskStatus llamado:', { id, newStatusId })
-        const updatedTask = await moveTask(id, newStatusId)
-        console.log('Respuesta de moveTask:', updatedTask)
-    
+        this.loadingMove = true
+        await moveTask(id, newStatusId)
         const index = this.tasks.findIndex(task => task.id === id)
         if (index !== -1) {
           this.tasks[index].status_id = newStatusId
-          console.log('Tarea actualizada localmente:', this.tasks[index])
-        } else {
-          console.warn('Tarea no encontrada en local tasks:', id)
         }
       } catch (error) {
-        console.error('Error en changeTaskStatus:', error.response?.data || error)
+        console.error(error)
         throw error
+      } finally {
+        this.loadingMove = false
       }
     }    
   }

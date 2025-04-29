@@ -5,12 +5,12 @@
   >
     <button
       @click.stop="$emit('delete', task)"
-      class="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-lg"
+      class="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-lg z-10"
     >
       ✖
     </button>
 
-    <div class="flex justify-between items-start">
+    <div class="flex justify-between items-start pr-6">
       <h3 class="text-lg font-semibold text-gray-800">{{ task.title }}</h3>
       <span
         class="text-xs font-bold uppercase rounded-full px-2 py-1"

@@ -1,5 +1,6 @@
 <template>
   <DashboardLayout>
+
     <div class="p-6">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold">Tablero de Tareas</h1>
@@ -11,9 +12,10 @@
         </button>
       </div>
 
-      <div v-if="tasksStore.loading" class="flex justify-center items-center min-h-[50vh]">
-        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div v-if="tasksStore.loading" class="fixed inset-0 flex items-center justify-center bg-white bg-opacity-70 z-50">
+        <div class="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
+
 
       <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div
