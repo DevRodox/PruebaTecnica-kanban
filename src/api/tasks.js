@@ -20,6 +20,9 @@ export const deleteTask = async (id) => {
 }
 
 export const moveTask = async (id, newStatusId) => {
+  console.log('moveTask llamada con:', { id, newStatusId })
   const response = await api.put(`/tasks/toggle-complete/${id}`, { status_id: newStatusId })
+  console.log('Respuesta backend:', response.data)
   return response.data
 }
+

@@ -10,12 +10,12 @@ export const useAuthStore = defineStore('auth', {
     async login(email, password) {
       try {
         const data = await loginApi(email, password)
-
-        this.token = data.token
-        localStorage.setItem('token', data.token)
-
+    
+        this.token = data.data.token
+        localStorage.setItem('token', data.data.token)
+    
         this.user = await fetchUserProfile()
-
+    
         return true
       } catch (error) {
         console.error(error)

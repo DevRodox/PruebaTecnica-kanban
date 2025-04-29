@@ -1,11 +1,11 @@
 <template>
   <div
-    class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer relative"
+    class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 cursor-grab active:cursor-grabbing relative"
     @click="$emit('edit', task)"
   >
     <button
       @click.stop="$emit('delete', task)"
-      class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors duration-300 ease-in-out"
+      class="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-lg"
     >
       ✖
     </button>
@@ -36,7 +36,7 @@
 import { computed } from 'vue'
 import { format } from 'date-fns'
 
-const props = defineProps({
+const { task } = defineProps({
   task: {
     type: Object,
     required: true
@@ -66,3 +66,12 @@ const formatDate = (dateString) => {
   return format(new Date(dateString), 'dd/MM/yyyy')
 }
 </script>
+
+<style scoped>
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

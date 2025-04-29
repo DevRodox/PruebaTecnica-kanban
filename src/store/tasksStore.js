@@ -16,29 +16,24 @@ export const useTasksStore = defineStore('tasks', {
 
   actions: {
     async loadTasks() {
-      this.loading = true
-      this.error = null
-
       try {
-        const data = await fetchTasks()
-        this.tasks = data.tasks || []
-      } catch (error) {
-        console.error(error)
-        this.error = 'Error al cargar tareas'
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async addTask(taskData) {
-      try {
-        const newTask = await createTask(taskData)
-        this.tasks.push(newTask)
+        const response = await fetchTasks()
+        this.tasks = response.data.data || []
       } catch (error) {
         console.error(error)
         throw error
       }
     },
+    
+    async addTask(taskData) {
+      try {
+        const response = await createTask(taskData)
+        this.tasks.push(response.data)
+      } catch (error) {
+        console.error(error)
+        throw error
+      }
+    },    
 
     async editTask(id, updatedData) {
       try {
@@ -65,15 +60,21 @@ export const useTasksStore = defineStore('tasks', {
 
     async changeTaskStatus(id, newStatusId) {
       try {
+        console.log('changeTaskStatus llamado:', { id, newStatusId })
         const updatedTask = await moveTask(id, newStatusId)
+        console.log('Respuesta de moveTask:', updatedTask)
+    
         const index = this.tasks.findIndex(task => task.id === id)
         if (index !== -1) {
-          this.tasks[index].status_id = updatedTask.status_id
+          this.tasks[index].status_id = newStatusId
+          console.log('Tarea actualizada localmente:', this.tasks[index])
+        } else {
+          console.warn('Tarea no encontrada en local tasks:', id)
         }
       } catch (error) {
-        console.error(error)
+        console.error('Error en changeTaskStatus:', error.response?.data || error)
         throw error
       }
-    }
+    }    
   }
 })

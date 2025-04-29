@@ -19,26 +19,29 @@
         <div
           v-for="(status, index) in statuses"
           :key="index"
+          :data-status-id="status.id"
           class="bg-gray-100 p-4 rounded-lg shadow-md min-h-[400px] max-h-[75vh] overflow-y-auto"
         >
           <h2 class="text-xl font-semibold mb-4">{{ status.label }}</h2>
 
           <draggable
-            :list="filteredTasks(status.id)"
-            group="tasks"
+            :list="tasksByStatus[status.id]"
+            :group="{ name: 'tasks', pull: true, put: true }"
             item-key="id"
             @end="onDragEnd"
           >
             <template #item="{ element }">
-              <TaskCard
-                :task="element"
-                @edit="openEditModal"
-                @delete="confirmDelete"
-              />
+              <div class="cursor-grab active:cursor-grabbing">
+                <TaskCard
+                  :task="element"
+                  @edit="openEditModal"
+                  @delete="confirmDelete"
+                />
+              </div>
             </template>
 
             <template #footer>
-              <div v-if="filteredTasks(status.id).length === 0" class="text-center text-gray-400 text-sm mt-4">
+              <div v-if="tasksByStatus[status.id].length === 0" class="text-center text-gray-400 text-sm mt-4">
                 No hay tareas
               </div>
             </template>
@@ -65,8 +68,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { format, addDays } from 'date-fns'
 import { useTasksStore } from '@/store/tasksStore'
+import { useAuthStore } from '@/store/authStore'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import TaskCard from '@/components/TaskCard.vue'
 import TaskModal from '@/components/TaskModal.vue'
@@ -74,6 +79,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import draggable from 'vuedraggable'
 
 const tasksStore = useTasksStore()
+const authStore = useAuthStore()
 
 const statuses = [
   { id: 1, label: 'Por Hacer' },
@@ -91,21 +97,43 @@ onMounted(() => {
   tasksStore.loadTasks()
 })
 
-const filteredTasks = (statusId) => {
-  return tasksStore.tasks.filter(task => task.status_id === statusId)
-}
+const tasksByStatus = computed(() => {
+  const grouped = { 1: [], 2: [], 3: [] }
+  tasksStore.tasks.forEach(task => {
+    if (grouped[task.status_id]) {
+      grouped[task.status_id].push(task)
+    }
+  })
+  return grouped
+})
 
 const onDragEnd = async (event) => {
-  const { item, to } = event
-  const newStatusIndex = Array.from(to.parentNode.children).indexOf(to)
-  const newStatusId = statuses[newStatusIndex]?.id
+  const item = event.item?._underlying_vm_
 
-  if (!newStatusId) return
+  if (!item) {
+    console.warn('No se encontró item movido')
+    return
+  }
+
+  const toColumn = event.to?.closest('[data-status-id]')
+  if (!toColumn) {
+    console.warn('No se encontró columna destino')
+    return
+  }
+
+  const newStatusId = Number(toColumn.dataset.statusId)
+
+  if (!newStatusId) {
+    console.warn('No se encontró status_id válido')
+    return
+  }
 
   try {
     await tasksStore.changeTaskStatus(item.id, newStatusId)
+    item.status_id = newStatusId
+    console.log('Tarea movida exitosamente', { id: item.id, newStatusId })
   } catch (error) {
-    console.error('Error al mover la tarea', error)
+    console.error('Error al mover la tarea:', error.response?.data || error)
   }
 }
 
@@ -113,8 +141,10 @@ const openModal = () => {
   selectedTask.value = {
     title: '',
     description: '',
-    expiration_date: '',
-    tag_id: ''
+    expiration_date: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
+    tag_id: '',
+    status_id: 1,
+    user_ids: []
   }
   isModalOpen.value = true
 }
@@ -126,14 +156,19 @@ const openEditModal = (task) => {
 
 const handleSaveTask = async (taskData) => {
   try {
+    const payload = {
+      ...taskData,
+      user_ids: [authStore.user?.id || 1]
+    }
+
     if (taskData.id) {
-      await tasksStore.editTask(taskData.id, taskData)
+      await tasksStore.editTask(taskData.id, payload)
     } else {
-      await tasksStore.addTask(taskData)
+      await tasksStore.addTask(payload)
     }
     closeModal()
   } catch (error) {
-    console.error('Error al guardar la tarea', error)
+    console.error('Error al guardar la tarea:', error.response?.data || error)
   }
 }
 
@@ -154,7 +189,7 @@ const handleDeleteTask = async () => {
   try {
     await tasksStore.removeTask(taskToDelete.value.id)
   } catch (error) {
-    console.error('Error eliminando tarea', error)
+    console.error('Error eliminando tarea:', error)
   } finally {
     isConfirmDialogOpen.value = false
   }
